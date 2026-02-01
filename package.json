@@ -1,0 +1,20 @@
+{
+  "name": "coreloops-cypress-assessment",
+  "version": "1.0.0",
+  "description": "Cypress automated testing for Coreloops application",
+  "scripts": {
+    "cypress:open": "cypress open",
+    "cypress:run": "cypress run",
+    "test": "cypress run"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "cypress": "^15.9.0",
+    "dotenv": "^17.2.3"
+  }
+   
+}
+
