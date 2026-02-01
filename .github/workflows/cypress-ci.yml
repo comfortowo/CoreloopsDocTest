@@ -1,7 +1,8 @@
-name: Cypress CI
+name: Coreloops E2E CI
 on:
   push:
-    branches: ["**"]
+    branches: [ main ]
+     
   pull_request:
     branches: ["**"]
 
