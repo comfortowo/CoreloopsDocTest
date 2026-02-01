@@ -1,58 +1,20 @@
 name: Coreloops E2E CI
 on:
   push:
-    branches: [ main ]
-     
-  pull_request:
-    branches: ["**"]
+    branches:
+      - main
 
 jobs:
-  cypress-tests:
+  cypress-run:
     runs-on: ubuntu-latest
-
     steps:
-      # 1. Checkout repo
-      - name: Checkout repository
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # 2. Setup Node.js
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Run Cypress Tests
+        uses: cypress-io/github-action@v6
         with:
-          node-version: 18
-          cache: npm
-
-      # 3. Install dependencies
-      - name: Install dependencies
-        run: npm ci
-
-      # 4. Run Cypress tests (headless)
-      - name: Run Cypress tests
-        run: npx cypress run
-        continue-on-error: true
-
-      # 5. Generate test summary
-      - name: Cypress Test Summary
-        if: always()
-        run: |
-          echo "### 🧪 Cypress Test Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "- Tests executed in headless mode" >> $GITHUB_STEP_SUMMARY
-          echo "- Check logs above for detailed results" >> $GITHUB_STEP_SUMMARY
-          echo "- Screenshots/videos uploaded if failures occurred" >> $GITHUB_STEP_SUMMARY
-
-      # 6. Upload screenshots (only if tests fail)
-      - name: Upload Cypress Screenshots
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: cypress-screenshots
-          path: cypress/screenshots
-
-      # 7. Upload videos (always useful)
-      - name: Upload Cypress Videos
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: cypress-videos
-          path: cypress/videos
+          browser: chrome
+        env:
+          CYPRESS_username: ${{ secrets.USERNAME }}
+          CYPRESS_password: ${{ secrets.PASSWORD }}
