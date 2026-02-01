@@ -1,32 +1,38 @@
-# Coreloops Automation Test
+ Project Overview
+This repository contains a Cypress-based end-to-end testing suite designed to validate both the manual entry and the financial workflows within the Coreloops application. The primary focus of these tests is to ensure that manual document creation, downloading, approving, and marking documents as paid functions correctly across different user sessions.
 
-This project contains Cypress automated tests for the Coreloops Document Workflow.
+Test Coverage
+The suite is organized into two primary automated workflows:
 
-##  Important: Authentication Instructions
+Manual Document Creation: Verifies the process of inputting data, managing form fields, and successfully creating new document records.
 
-The application uses a **Magic Link / OTP** login system, which prevents fully automated login (since robots cannot access email securely). 
+Document Management: Validates the downstream workflow, including the approval process, file downloading, and the final "Mark as Paid" status update.
 
-To handle this, I have implemented a **Semi-Automated Login Flow**:
+Technical Approach and Challenges
+Authentication Strategy & Manual Resumption
+During the development of this suite, I explored several methods to handle the application's passwordless Email OTP (One-Time Password) system.
 
-1. **Run the Test:**
-   ```bash
-   npx cypress open
-   Select the Test:
+Cookie Injection (Attempted): I initially attempted to bypass the login screen by injecting session cookies. However, the application's security tokens are highly dynamic and short-lived, making this method unstable.
 
-2. Click on E2E Testing.
+The Manual Pause Method: To handle the OTP securely, I integrated a cy.pause() command into the login flow.
 
-Select the test file (e.g., manual_workflow.cy.js).
+How it works: The test will automatically navigate to the login page and enter the email. It then pauses the execution.
 
-3. Handle the Login Pause:
+User Action: You must manually enter the OTP code received in your email.
 
-The test will launch the browser and check if you are logged in.
+Resume: Once the code is entered and you are logged in, you must click the "Resume" button in the Cypress Runner to allow the rest of the automated test to finish.
 
-If not, it will PAUSE at the login screen.
+GitHub Actions Integration
+I have successfully integrated this project with GitHub Actions to establish a CI/CD pipeline (.github/workflows/cypress-ci.yml).
 
-ACTION: Manually enter your email and the OTP code.
+Note on CI Failures: The GitHub Actions checks will fail in the cloud environment. This is expected, as the automated runner cannot manually enter the OTP or "Resume" the test. This setup is provided to demonstrate the CI structure, while the logic is optimized for local execution.
 
-RESUME: Once you see the Dashboard, click the Resume (Play ) button in the Cypress Test Runner.
+Local Execution Instructions
+To see the tests pass, run them locally:
 
-Automation Execution:
+Clone the repository:
 
-The test will then automatically proceed to verify the "Manual Upload" and "Document Approval" workflows.
+git clone https://github.com/comfortowo/CoreloopsDocTest.git
+Install dependencies:
+
+Run & Resume: Start a test, input your OTP, and click Resume in the Cypress UI to continue the automation.
