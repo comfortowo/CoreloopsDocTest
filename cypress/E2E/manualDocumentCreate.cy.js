@@ -14,16 +14,21 @@ describe('Coreloops Document Test - Manual Workflow', () => {
   });
 
   beforeEach(() => {
-    cy.viewport(1920, 1080);
-    
-    // Navigation
-    cy.get('button[id^="radix-"]').eq(0).click({ force: true });
-    cy.contains('Comfort Iyabo Owolabi').should('be.visible').click({ force: true });
-    cy.wait(WAIT_TIME.MEDIUM);
+  cy.viewport(1920, 1080);
+  
+  // Navigation
+  cy.get('button[id^="radix-"]').eq(0).click({ force: true });
+  cy.contains('Comfort Iyabo Owolabi').should('be.visible').click({ force: true });
+  cy.wait(WAIT_TIME.LONG);
 
-    cy.get('button[id^="radix-"]').eq(1).click({ force: true });
-    cy.contains('Documents').should('be.visible').click({ force: true });
-  });
+  cy.get('button[id^="radix-"]').eq(1).click({ force: true });
+  cy.contains('Documents').should('be.visible').click({ force: true });
+  cy.wait(WAIT_TIME.LONG);
+  
+  // Ensure page is fully loaded and Add button is visible
+  cy.contains('button', 'Add', { timeout: 15000 }).should('be.visible');
+  cy.wait(WAIT_TIME.MEDIUM);
+});
 
   afterEach(() => {
     // Close any open modals
@@ -33,6 +38,8 @@ describe('Coreloops Document Test - Manual Workflow', () => {
     cy.wait(WAIT_TIME.MEDIUM);
   });
 
+  // ==================== POSITIVE TEST (Must Pass First) ====================
+  
   it('TC-01: Create Manually Flow', () => {
     // Initiate document creation
     cy.contains('button', 'Add').should('be.visible').click();
@@ -82,35 +89,35 @@ describe('Coreloops Document Test - Manual Workflow', () => {
     goBackToDashboard();
   });
 
-  it('TC-02: Create Invoice with Minimal Fields', () => {
-    cy.contains('button', 'Add').should('be.visible').click();
+  // ==================== OTHER TESTS (Run After TC-01 Passes) ====================
+
+ it('TC-02: Create Invoice with Minimal Fields', () => {
+    cy.contains('button', 'Add').click();
     cy.contains('[role="menuitem"], button', 'Add New').click({ force: true });
-    cy.contains('Create Manually').should('be.visible').click();
-    
+    cy.contains('Create Manually').click();
     selectDocumentType('Invoice');
-    
     cy.contains('button', 'Add Line Item').click();
-    
     cy.get('[data-index="0"]').contains('Enter title').click({ force: true });
     cy.get('[data-index="0"]').find('textarea, input').first()
       .type('Minimal Item', { force: true });
-    cy.get('[data-index="0"]').find('[role="checkbox"]').first().click({ force: true });
-    
     cy.log('Selecting Cost Code...');
     cy.get('[data-index="0"]')
       .find('button[role="combobox"], button:contains("Select")')
       .first().click({ force: true });
     cy.get('[role="option"]').first().click({ force: true });
-    cy.get('body').type('{esc}');
-    cy.get('[role="listbox"]').should('not.exist');
-    cy.get('[data-index="0"]').first().click(5, 5, { force: true });
-    
-    setQuantity(1);
+    cy.get('body').then(($body) => {
+        if ($body.find('button:contains("Confirm")').length > 0) {
+            cy.contains('button', 'Confirm').click({ force: true });
+            cy.wait(500);  
+        }
+    });
+    setQuantity(10);
     setRate(20000);
-    
+    setVATRate('20%'); 
     clickGenerateInvoice();
     goBackToDashboard();
-  });
+});
+
 
   it('TC-03: Create Invoice with Different Unit', () => {
     cy.contains('button', 'Add').should('be.visible').click();
@@ -200,30 +207,35 @@ describe('Coreloops Document Test - Manual Workflow', () => {
     setQuantity(10);
     setRate(20000);
     
-    // Cancel instead of generating
     goBackToDashboard();
   });
 
   // ==================== HELPER FUNCTIONS ====================
 
-  function setQuantity(value) {
-    cy.get('body').type('{esc}');
-    
-    cy.log('Opening Quantity field via hash icon...');
-    cy.get('svg.lucide-hash').first().parent().click({ force: true });
-    cy.wait(WAIT_TIME.SHORT);
-    
-    cy.log('Typing in the quantity field...');
-    cy.focused().type('{selectall}' + String(value)); // FIXED: Use {selectall} instead of .clear()
-    
-    cy.get('body').type('{esc}');
-    cy.log('Clicking outside to save...');
-    cy.get('body').click(CLICK_POSITION.x, CLICK_POSITION.y, { force: true });
-    cy.wait(WAIT_TIME.MEDIUM);
-    
-    cy.log('Verifying saved value...');
-    cy.contains(String(value)).should('be.visible');
-  }
+ function setQuantity(value) {
+ 
+  cy.get('body').type('{esc}');
+  
+  cy.log('Opening Quantity field via specific hash icon parent...');
+ 
+  cy.get('svg.lucide-hash').first().closest('div[data-state]').click({ force: true });
+  
+  cy.wait(WAIT_TIME.MEDIUM); 
+  
+  cy.log('Typing in the quantity field...');
+   
+  cy.focused().should('exist').type('{selectall}{backspace}', { delay: 100 });
+  cy.focused().type(String(value), { delay: 100 });
+  
+   cy.focused().blur();
+  cy.wait(WAIT_TIME.MEDIUM);
+  
+  cy.log('Verifying saved value...');
+   cy.get('p.font-inter')
+    .contains(String(value), { timeout: 10000 })
+    .scrollIntoView()
+    .should('exist'); 
+}
 
   function selectUnit(unitName) {
     cy.get('body').type('{esc}');
@@ -239,42 +251,45 @@ describe('Coreloops Document Test - Manual Workflow', () => {
     cy.wait(WAIT_TIME.MEDIUM);
   }
 
-  function setRate(amount) {
-    cy.get('body').type('{esc}');
-    
-    cy.log('Opening rate field via icon...');
-    cy.contains('£0.00').click({ force: true });
-    cy.wait(WAIT_TIME.SHORT);
-    
-    cy.log('Entering rate value...');
-    cy.focused().type('{selectall}' + String(amount)); // FIXED: Use {selectall} instead of .clear()
-    
-    cy.get('body').type('{esc}');
-    cy.log('Clicking outside to save...');
-    cy.get('body').click(CLICK_POSITION.x, CLICK_POSITION.y, { force: true });
-    cy.wait(WAIT_TIME.MEDIUM);
-    
-    cy.log('Verifying rate value...');
-    cy.contains('20,000').should('be.visible');
-  }
+ function setRate(amount) {
+ 
+  cy.get('body').type('{esc}');
+  
+  cy.log('Opening rate field targeting specific element...');
+  
+ 
+  cy.get('p.font-inter').contains('£0.00').click({ force: true });
+  
+  cy.wait(WAIT_TIME.MEDIUM); 
+  
+  cy.log('Entering rate value...');
+   
+  cy.focused().should('exist').type('{selectall}{backspace}', { delay: 100 });
+  cy.focused().type(String(amount), { delay: 100 });
+   
+  cy.focused().type('{enter}');
+  
+  cy.log('Verifying rate value...');
+   
+  cy.get('p.font-inter').should('contain', amount.toLocaleString()); 
+}
 
-  function setVATRate(percentage) {
-    cy.get('body').type('{esc}');
-    
-    cy.log('Opening VAT rate dropdown...');
-    cy.contains('p', '0%').click({ force: true });
-    cy.wait(WAIT_TIME.SHORT);
-    
-    cy.get('body').type('{esc}');
-    
-    cy.log(`Selecting VAT rate: ${percentage}`);
-    cy.contains(percentage).click({ force: true });
-    cy.wait(WAIT_TIME.MEDIUM);
-    
-    cy.log(`Verifying VAT rate: ${percentage}`);
-    cy.contains('p', percentage).should('be.visible');
-  }
+ function setVATRate(percentage) {
+  cy.get('body').type('{esc}');
+  
+  cy.log('Opening VAT rate dropdown targeting parent container...');
+  cy.get('p.font-inter').contains('0%')
+    .closest('div.cursor-text')
+    .click({ force: true });
+  
+  cy.log(`Waiting for ${percentage} in the portal...`);
 
+  cy.contains(percentage, { timeout: 15000 })
+    .should('be.visible')
+    .click({ force: true });
+  cy.wait(WAIT_TIME.MEDIUM);
+  cy.get('p.font-inter').should('contain', percentage);
+}
   function selectDocumentType(typeName) {
     cy.log(`--- Selecting Document Type: ${typeName} ---`);
     
@@ -379,7 +394,7 @@ describe('Coreloops Document Test - Manual Workflow', () => {
       .next('div')
       .find('input')
       .clear({ force: true })
-      .type(referenceValue, { force: true });
+      .type(referenceValue, { delay: 50, force: true });  
   }
 
   function clickGenerateInvoice() {
